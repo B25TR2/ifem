@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>iFemm - Untuk Kamu</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Perbaikan untuk layout Tampilan Penuh */
+        html, body {
+            height: 100%;
+            overflow: auto;
+            overscroll-behavior-y: contain; /* Mencegah pull-to-refresh */
+        }
+        body {
+            background-color: #fce7f3; /* Warna latar pink lembut */
+            font-family: 'Poppins', -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+        .content-container {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .page {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; flex-direction: column;
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        .page.hidden { opacity: 0; transform: scale(0.98); pointer-events: none; }
+        .scrollable-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Scroll halus di iOS */
+        }
+        .scrollable-content::-webkit-scrollbar { display: none; }
+        .scrollable-content { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Padding untuk safe area di iOS & Android */
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        
+        .font-pacifico { font-family: 'Pacifico', cursive; }
+        .font-caveat { font-family: 'Caveat', cursive; }
+        .font-dancing { font-family: 'Dancing Script', cursive; }
+        
+        /* --- CSS untuk Transisi Footer --- */
+        .nav-item { transition: all 0.4s cubic-bezier(0.45, 0, 0.55, 1); }
+        .nav-icon-container { transition: all 0.4s cubic-bezier(0.45, 0, 0.55, 1); }
+        .nav-item.active { transform: translateY(-1.5rem); color: white; }
+        .nav-item.active .nav-icon-container {
+            background-color: #ec4899; width: 4rem; height: 4rem;
+            border-width: 4px; border-color: white;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .nav-item.active .material-icons { font-size: 36px; }
+
+        /* --- CSS untuk Halaman Galeri --- */
+        .gallery-item { position: relative; overflow: hidden; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); break-inside: avoid; margin-bottom: 0.75rem; }
+        .gallery-item img { transition: transform 0.4s ease; }
+        .gallery-item:hover img { transform: scale(1.05); }
+        .gallery-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); opacity: 0; transition: opacity 0.4s ease; color: white; display: flex; align-items: flex-end; padding: 0.75rem; }
+        .gallery-item:hover .gallery-overlay { opacity: 1; }
+        .gallery-tag { position: absolute; top: 0.5rem; left: 0.5rem; background-color: rgba(236, 72, 153, 0.8); color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; display: flex; align-items: center; }
+        
+        /* --- CSS untuk Halaman Musik & Surat --- */
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(236, 72, 153, 0); } 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); } }
+        .play-button.playing { animation: pulse 2s infinite; }
+        #letter-page { background: linear-gradient(180deg, #fbcfe8, #fce7f3); }
+        @keyframes fall { 0% { transform: translateY(-10vh) translateX(0) rotate(0); opacity: 1; } 100% { transform: translateY(120vh) translateX(5vw) rotate(720deg); opacity: 0; } }
+        .petal { position: absolute; font-size: 1.5rem; color: rgba(255, 255, 255, 0.7); animation: fall 10s linear infinite; top: -10vh; }
+        .letter-text-line { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .letter-text-line.visible { opacity: 1; transform: translateY(0); }
+
+        /* --- CSS untuk Halaman Timeline --- */
+        #timeline-page { background: linear-gradient(180deg, #fdf2f8 0%, #fce7f3 100%); position: relative; }
+        .bokeh-bg { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+        @keyframes move-bokeh { 0% { transform: translate(0, 0); } 50% { transform: translate(20px, 30px); } 100% { transform: translate(0, 0); } }
+        .bokeh-bg div { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%); filter: blur(40px); animation: move-bokeh 20s infinite alternate; }
+        .timeline-container::before { content: ''; position: absolute; left: 36px; top: 1rem; bottom: 1rem; width: 4px; background-image: linear-gradient(to bottom, #fbcfe8, #f9a8d4); border-radius: 2px; box-shadow: 0 0 10px rgba(236, 72, 153, 0.3); }
+        .timeline-item { position: relative; padding-left: 80px; padding-bottom: 2.5rem; opacity: 0; transform: translateX(-20px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+        .timeline-item.visible { opacity: 1; transform: translateX(0); }
+        .timeline-icon { position: absolute; left: 12px; top: 0; width: 50px; height: 50px; font-size: 2rem; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 1; border: 2px solid white; }
+
+         /* --- CSS untuk Pop-up Balasan --- */
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-box {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        /* --- CSS untuk Halaman Musik Emosional --- */
+        #music-page {
+            background: linear-gradient(180deg, #1e1b4b 0%, #4c1d95 100%);
+            color: white;
+        }
+        #particle-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+        #waveform-canvas {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="content-container">
+        <!-- Halaman Utama -->
+        <div id="main-page" class="page">
+            <header class="relative bg-white flex justify-between items-center p-4 pt-safe shadow-md z-20"><h1 class="text-lg font-semibold text-gray-800">Apa saja tentang ifemm</h1><div class="flex items-center space-x-4"><span id="camera-button" class="material-icons text-gray-600 cursor-pointer">photo_camera</span><span id="menu-button" class="material-icons text-gray-600 cursor-pointer">more_vert</span></div><div id="dropdown-menu" class="hidden absolute top-full right-4 bg-white rounded-lg shadow-xl py-2 z-20 w-48 border"><p class="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50">ifem sayangku</p><p class="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50">ifemm cintaku</p><p class="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50">ifem lucuku</p><p class="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-50">ifem maniskuu</p></div></header>
+            <main class="scrollable-content p-4 space-y-6 bg-pink-50"><div class="bg-pink-200 rounded-3xl p-4 flex items-center shadow-lg"><img alt="Femi dengan jaket kuning" class="w-28 h-40 object-cover rounded-2xl mr-4" src="image.png"/><p class="text-gray-700 text-sm">Femi yang mau otw magang dan pengenalan tempat magangnya dan hari senin paling sibuk</p></div><div class="bg-pink-200 rounded-3xl p-4 flex items-center shadow-lg"><p class="text-gray-700 mr-4 text-sm">Liat senyummu di foto ini, rasanya tenang banget...</p><img alt="Femi tersenyum" class="w-28 h-40 object-cover rounded-2xl" src="image copy.png"/></div><div class="bg-pink-200 rounded-3xl p-4 flex items-center shadow-lg"><img alt="Femi manyun" class="w-28 h-40 object-cover rounded-2xl mr-4" src="image copy 2.png"/><p class="text-gray-700 text-sm">Meskipun wajahnya lagi manyun dan belum senyum, tetap aja manisnya nggak ilang...</p></div></main>
+        </div>
+        
+      <!-- Halaman Galeri (Diperbarui dengan Musik) -->
+        <div id="gallery-page" class="page hidden">
+            <main class="scrollable-content p-2 pt-safe bg-pink-50">
+                <div class="text-center my-4">
+                    <h2 class="text-2xl font-dancing text-gray-700">Kenangan Kita</h2>
+                    <!-- Tombol untuk memutar musik galeri -->
+                    <button id="gallery-music-button" class="bg-white/50 text-pink-500 text-sm px-3 py-1 rounded-full shadow-sm mt-1 flex items-center justify-center mx-auto">
+                        <span class="material-icons mr-1">play_arrow</span>
+                        <span id="gallery-music-text">Mainkan Lagu Kita</span>
+                    </button>
+                </div>
+                <!-- Elemen audio untuk galeri, tersembunyi -->
+                <audio id="gallery-audio" src="v4.www-y2mate.blog - Lewis Capaldi - Someone You Loved (256 KBps).mp3" loop></audio>
+
+                <div style="column-count: 3; column-gap: 0.75rem;">
+                    <div class="gallery-item"><img src="WhatsApp Image 2025-06-06 at 21.03.51_37fc6065.jpg" /><div class="gallery-overlay"><p class="font-caveat text-lg">Foto selfie favoritku sepanjang masa.</p></div><div class="gallery-tag">🎉 First</div></div>
+                    <div class="gallery-item"><img src="image copy 4.png" /><div class="gallery-overlay"><p class="font-caveat text-lg">"Kamu udah makan blm?"</p></div></div>
+                    <div class="gallery-item"><div class="h-40 bg-rose-200 p-4 flex items-center justify-center"><p class="font-dancing text-center text-rose-800">"Kamu itu rumah versi manusia."</p></div><div class="gallery-overlay"><p class="font-caveat text-lg">Notes kecil buat kamu.</p></div></div>
+                    <div class="gallery-item"><img src="image copy 5.png" /><div class="gallery-overlay"><p class="font-caveat text-lg">"Waktu itu kita duduk diam berdua..."</p></div></div>
+                    <div class="gallery-item"><img src="WhatsApp Image 2025-06-21 at 22.53.21_ed947a11.jpg" /><div class="gallery-overlay"><p class="font-caveat text-lg">Liatin kamu dari jauh, hehe.</p></div></div>
+                </div>
+                  <!-- ELEMEN BARU DI BAWAH GALERI -->
+                    <div class="mt-8 space-y-6 pb-8">
+                        <!-- Playlist Lagu -->
+                        <div class="bg-white/70 backdrop-blur-md p-4 rounded-2xl shadow-lg">
+                            <h3 class="font-dancing text-xl text-gray-700 mb-3">Lagu Kenangan Kita 🎶</h3>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-center justify-between"><p class="font-semibold text-gray-600">1. You Are The Reason</p><p class="text-gray-500">Calum Scott</p></div>
+                                <div class="flex items-center justify-between"><p class="font-semibold text-gray-600">2. Perfect</p><p class="text-gray-500">Ed Sheeran</p></div>
+                                <div class="flex items-center justify-between"><p class="font-semibold text-gray-600">3. someone you loved</p><p class="text-gray-500">Lewis capaldi</p></div>
+                            </div>
+                        </div>
+                        <!-- Kutipan Romantis -->
+                        <div class="bg-rose-100/80 backdrop-blur-md p-6 rounded-2xl shadow-lg text-center">
+                            <p class="font-caveat text-2xl text-rose-800">"Setiap hari bersama ifemm adalah halaman favorit dalam buku ceritaku."</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+            </main>
+        </div>
+        
+        <!-- Halaman Kamera -->
+        <div id="camera-page" class="page hidden flex-col items-center justify-center text-center bg-pink-100 p-8"><h2 class="text-3xl font-bold text-pink-500 mb-4">Hehe..</h2><p class="text-xl text-gray-700">Udah cantik kok femiii sayanggkuu, ngapain diklik?</p><button id="back-button-camera" class="mt-10 bg-pink-500 text-white font-semibold py-3 px-8 rounded-full shadow-lg hover:bg-pink-600">Kembali</button></div>
+
+           <!-- Halaman Musik (DIROMBAK TOTAL) -->
+        <div id="music-page" class="page hidden">
+            <canvas id="particle-canvas"></canvas>
+            <div class="relative z-10 flex flex-col h-full p-8 pt-safe">
+                <div class="text-center text-white/80 font-light italic">
+                    <p>"Kadang aku nggak bisa ngomong langsung...</p>
+                    <p>tapi lewat suara atau lagu ini, kamu bisa denger semua yang aku rasa."</p>
+                </div>
+                <div class="flex-grow flex flex-col items-center justify-center text-center">
+                    <img src="WhatsApp Image 2025-06-08 at 21.33.44_78372499.jpg" alt="Album Art" class="w-56 h-56 rounded-full shadow-2xl mb-6 border-4 border-white/20">
+                    <h2 class="text-3xl font-bold">You Are The Reason</h2>
+                    <h3 class="text-lg font-light mb-10 text-white/70">double klik untuk play music</h3>
+                    <canvas id="waveform-canvas" width="300" height="100"></canvas>
+                </div>
+                <audio id="audio-player" src="v4.www-y2mate.blog - Calum Scott - You Are The Reason (Official Video) (256 KBps).mp3" crossOrigin="anonymous"></audio>
+            </div>
+        </div>
+    </div>
+
+        <!-- Halaman Surat Cinta (Diperbarui dengan Pop-up) -->
+        <div id="letter-page" class="page hidden">
+            <div id="petal-container" class="absolute inset-0 overflow-hidden z-0"></div>
+            <main class="scrollable-content relative z-10 flex flex-col justify-between h-full p-8 pt-safe text-center text-gray-800">
+                <div id="letter-content" class="font-caveat text-2xl leading-relaxed space-y-4"><p id="line1" class="letter-text-line">Hai femiiikuu... 💌</p><p id="line2" class="letter-text-line">Aku tahu ini cuma halaman biasa...</p><p id="line3" class="letter-text-line">di balik setiap klik kamu ke sini — ada seseorang yang mikirin kamu diam-diam.</p><p id="line4" class="letter-text-line">Kadang aku gak bisa bilang langsung, tapi lewat surat ini...</p><p id="line5" class="letter-text-line">aku cuma mau bilang:</p><p id="line6" class="letter-text-line text-3xl font-bold text-pink-500 mt-4">Aku bersyukur banget bisa punya femii.</p><p id="line7" class="letter-text-line mt-8">❤️ — Yang selalu mikirin kamu diam-diam</p></div>
+                <div class="mt-8">
+                    <div class="flex items-center justify-center space-x-4 mb-8">
+                        <button id="letter-audio-button" class="bg-white/50 p-3 rounded-full shadow-md transition-transform duration-200"><span class="material-icons text-pink-500">volume_up</span></button>
+                        <button id="reply-button" class="bg-pink-500 text-white font-semibold py-2 px-6 rounded-full shadow-lg">Balas ya sayangku</button>
+                    </div>
+                    <audio id="letter-audio" src="WhatsApp Audio 2025-07-04 at 21.36.57_6a2d828a.waptt.opus"></audio>
+                    <div class="w-full max-w-xs mx-auto"><img src="image copy 6.png" class="w-full h-auto object-cover rounded-2xl shadow-xl"><p class="text-sm text-gray-700 mt-3 italic">“Kalau kamu baca ini, aku lagi kangen banget sama kamu…”</p></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- POP-UP BALASAN -->
+    <div id="reply-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none modal-overlay">
+        <div class="modal-box bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm opacity-0 transform scale-95">
+            <h3 class="text-xl font-semibold text-gray-800 text-center mb-4">Tulis Buat calon suami ifem💌</h3>
+            <textarea id="reply-textarea" class="w-full h-32 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-300" placeholder="Ketik di sini..."></textarea>
+            <div class="flex justify-end space-x-3 mt-4">
+                <button id="cancel-reply-button" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg">jahat banget diBatalin</button>
+                <button id="send-reply-button" class="px-4 py-2 text-white bg-pink-500 rounded-lg">Kirim ke calon suami ifemm</button>
+            </div>
+        </div>
+    </div>
+        <!-- Halaman Timeline -->
+        <div id="timeline-page" class="page hidden"><div class="bokeh-bg"><div style="width: 300px; height: 300px; top: 10%; left: -150px; animation-delay: 0s;"></div><div style="width: 250px; height: 250px; bottom: 5%; right: -120px; animation-delay: 5s;"></div></div><header class="relative bg-transparent flex justify-center items-center p-4 pt-safe z-10"><h1 class="text-3xl font-dancing font-bold text-pink-800/70">Perjalanan Hati Kita</h1></header><main class="scrollable-content px-4 py-8 relative z-10"><div class="timeline-container relative"><div class="timeline-item"><div class="timeline-icon"><span>💭</span></div><div class="bg-white/50 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/20"><h3 class="font-dancing text-xl font-bold text-pink-600">Pertama Kali Lihat Kamu</h3><p class="font-dancing text-lg text-gray-700 italic mt-1">"Aku gak ngerti kenapa, tapi kamu langsung bikin penasaran…"</p><p class="text-xs text-pink-500 mt-3 p-1 bg-pink-100/70 rounded-md inline-block">🔖 Fase stalking story IG kamu tiap malam</p></div></div><div class="timeline-item"><div class="timeline-icon"><span>😳</span></div><div class="bg-white/50 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/20"><h3 class="font-dancing text-xl font-bold text-pink-600">Saat Kita Mulai Dekat</h3><p class="font-dancing text-lg text-gray-700 italic mt-1">"Deg-degan tiap nunggu chat masuk..."</p><p class="text-xs text-pink-500 mt-3 p-1 bg-pink-100/70 rounded-md inline-block">🔖 Fase deny suka tapi hati udah ribet</p></div></div><div class="timeline-item"><div class="timeline-icon"><span>😌</span></div><div class="bg-white/50 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/20"><h3 class="font-dancing text-xl font-bold text-pink-600">Waktu Aku Ngerasa Nyaman</h3><p class="font-dancing text-lg text-gray-700 italic mt-1">"Kamu itu rumah. Tapi versi lucu dan bisa jawab ‘iya sayang’."</p><p class="text-xs text-pink-500 mt-3 p-1 bg-pink-100/70 rounded-md inline-block">🔖 Fase tersenyum lihat chat masuk</p></div></div><div class="timeline-item"><div class="timeline-icon"><span>🥺</span></div><div class="bg-white/50 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/20"><h3 class="font-dancing text-xl font-bold text-pink-600">Waktu Aku Rindu</h3><p class="font-dancing text-lg text-gray-700 italic mt-1">"Aku tahu ini aneh, tapi kadang aku cuma diem, denger lagu, terus kamu muncul di kepalaku..."</p></div></div><div class="timeline-item"><div class="timeline-icon"><span>🥰</span></div><div class="bg-white/50 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/20"><h3 class="font-dancing text-xl font-bold text-pink-600">Waktu Aku Yakin</h3><p class="font-dancing text-lg text-gray-700 italic mt-1">"Mungkin ini yang orang bilang, ‘kamu tahu kalau tahu’."</p></div></div><div class="timeline-item"><div class="timeline-icon"><span>🫂</span></div><div class="bg-white/50 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/20"><h3 class="font-dancing text-xl font-bold text-pink-600">Dan Sekarang...</h3><p class="font-dancing text-lg text-gray-700 italic mt-1">"Perjalanan ini masih panjang, dan aku mau jalaninnya sama kamu."</p></div></div></div></main></div>
+    </div>
+
+    <!-- FOOTER DINAMIS -->
+    <footer class="bg-white/80 backdrop-blur-sm p-2 shadow-[0_-2px_5px_rgba(0,0,0,0.1)] z-30 pb-safe">
+        <div class="flex justify-around items-center">
+            <a id="nav-gallery" href="#" class="nav-item flex flex-col items-center text-center text-gray-500"><div class="nav-icon-container w-12 h-12 rounded-full flex items-center justify-center"><span class="material-icons">photo_library</span></div></a>
+            <a id="nav-music" href="#" class="nav-item flex flex-col items-center text-center text-gray-500"><div class="nav-icon-container w-12 h-12 rounded-full flex items-center justify-center relative"><span class="material-icons">music_note</span><span class="material-icons text-pink-500 text-xs absolute -top-1 -right-1">favorite</span></div></a>
+            <a id="nav-home" href="#" class="nav-item flex flex-col items-center text-center"><div class="nav-icon-container rounded-full flex items-center justify-center"><span class="material-icons">home</span></div></a>
+            <a id="nav-letter" href="#" class="nav-item flex flex-col items-center text-center text-gray-500"><div class="nav-icon-container w-12 h-12 rounded-full flex items-center justify-center"><span class="material-icons">mail_outline</span></div></a>
+            <a id="nav-timeline" href="#" class="nav-item flex flex-col items-center text-center text-gray-500"><div class="nav-icon-container w-12 h-12 rounded-full flex items-center justify-center"><span class="material-icons">schedule</span></div></a>
+        </div>
+    </footer>
+
+    <script>
+        const allPages = document.querySelectorAll('.page');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        function showPage(pageId) {
+            allPages.forEach(page => page.classList.add('hidden'));
+            const targetPage = document.getElementById(pageId);
+            if(targetPage) targetPage.classList.remove('hidden');
+
+            navItems.forEach(item => item.classList.remove('active'));
+
+            let activeNavId = 'nav-home';
+            if (pageId === 'gallery-page') activeNavId = 'nav-gallery';
+            else if (pageId === 'music-page') activeNavId = 'nav-music';
+            else if (pageId === 'letter-page') activeNavId = 'nav-letter';
+            else if (pageId === 'timeline-page') activeNavId = 'nav-timeline';
+            
+            const activeNavItem = document.getElementById(activeNavId);
+            if(activeNavItem) activeNavItem.classList.add('active');
+
+            // --- PENJELASAN JAVASCRIPT #1: PEMANGGILAN FUNGSI ---
+            // Saat halaman musik dibuka, panggil fungsi 'initMusicPage' untuk memulai semua animasi.
+            if (pageId === 'music-page') {
+                initMusicPage();
+            } else {
+                // Jika pindah ke halaman lain, hentikan musiknya.
+                const audioPlayer = document.getElementById('audio-player');
+                if (audioPlayer && !audioPlayer.paused) {
+                    audioPlayer.pause();
+                }
+            }
+            // HAPUS KURUNG KURAWAL DARI SINI
+        
+            if (pageId === 'letter-page') {
+                startLetterAnimation();
+            }
+            if (pageId === 'timeline-page') {
+                startTimelineAnimation();
+            }
+        } // <-- PINDAHKAN KE SINI. SEKARANG FUNGSI showPage MENCAKUP SEMUA LOGIKA.
+        function startTimelineAnimation() {
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.2 });
+            timelineItems.forEach(item => { observer.observe(item); });
+        }
+        
+        // --- Navigasi ---
+        document.getElementById('nav-gallery').addEventListener('click', (e) => { e.preventDefault(); showPage('gallery-page'); });
+        document.getElementById('nav-music').addEventListener('click', (e) => { e.preventDefault(); showPage('music-page'); });
+        document.getElementById('nav-letter').addEventListener('click', (e) => { e.preventDefault(); showPage('letter-page'); });
+        document.getElementById('nav-timeline').addEventListener('click', (e) => { e.preventDefault(); showPage('timeline-page'); });
+        document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); showPage('main-page'); });
+        
+        const cameraButton = document.getElementById('camera-button');
+        if(cameraButton) cameraButton.addEventListener('click', () => showPage('camera-page'));
+        
+        const backButtonCamera = document.getElementById('back-button-camera');
+        if(backButtonCamera) backButtonCamera.addEventListener('click', () => showPage('main-page'));
+
+          // --- Fungsionalitas Pop-up Balasan (Diperbaiki) ---
+        const replyModal = document.getElementById('reply-modal');
+        const replyButton = document.getElementById('reply-button');
+        const cancelReplyButton = document.getElementById('cancel-reply-button');
+        const sendReplyButton = document.getElementById('send-reply-button');
+        const replyTextarea = document.getElementById('reply-textarea');
+
+        function showReplyModal() {
+            if (!replyModal) return;
+            const modalBox = replyModal.querySelector('.modal-box');
+            replyModal.classList.remove('hidden', 'pointer-events-none');
+            setTimeout(() => {
+                replyModal.classList.remove('opacity-0');
+                if (modalBox) modalBox.classList.remove('opacity-0', 'scale-95');
+            }, 10);
+        }
+
+        function hideReplyModal() {
+            if (!replyModal) return;
+            const modalBox = replyModal.querySelector('.modal-box');
+            replyModal.classList.add('opacity-0');
+            if (modalBox) modalBox.classList.add('opacity-0', 'scale-95');
+            
+            setTimeout(() => {
+                replyModal.classList.add('hidden', 'pointer-events-none');
+                if (replyTextarea) replyTextarea.value = '';
+            }, 300);
+        }
+
+        if(replyButton) replyButton.addEventListener('click', showReplyModal);
+        if(cancelReplyButton) cancelReplyButton.addEventListener('click', hideReplyModal);
+        if(sendReplyButton) sendReplyButton.addEventListener('click', () => {
+            if (!replyTextarea) return;
+            const message = replyTextarea.value;
+            if (message.trim() === '') return;
+
+            const phoneNumber = '6288287269056';
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+            
+            window.open(whatsappUrl, '_blank');
+            hideReplyModal();
+        });
+
+        
+        // --- PENJELASAN JAVASCRIPT #2: FUNGSI UTAMA HALAMAN MUSIK ---
+        // Variabel ini untuk memastikan semua persiapan animasi hanya dilakukan sekali saja.
+        let isMusicPageInitialized = false;
+
+        function initMusicPage() {
+            if (isMusicPageInitialized) return;
+            
+            const audioPlayer = document.getElementById('audio-player');
+            const waveformCanvas = document.getElementById('waveform-canvas');
+            const particleCanvas = document.getElementById('particle-canvas');
+            // Pastikan semua elemen ada sebelum melanjutkan
+            if (!audioPlayer || !waveformCanvas || !particleCanvas) return;
+            isMusicPageInitialized = true;
+
+            const waveformCtx = waveformCanvas.getContext('2d');
+            const particleCtx = particleCanvas.getContext('2d');
+            
+            particleCanvas.width = window.innerWidth;
+            particleCanvas.height = window.innerHeight;
+
+            // Variabel untuk menyimpan data audio dan partikel
+            let audioContext, analyser, source, dataArray;
+            let particles = [], loveParticles = [];
+
+            // Membuat partikel cahaya latar belakang secara acak
+            for (let i = 0; i < 50; i++) {
+                particles.push({ x: Math.random() * particleCanvas.width, y: Math.random() * particleCanvas.height, radius: Math.random() * 2, vx: Math.random() * 0.5 - 0.25, vy: Math.random() * 0.5 - 0.25, opacity: Math.random() * 0.5 + 0.2 });
+            }
+
+            // Saat kanvas detak jantung diklik
+            waveformCanvas.addEventListener('click', () => {
+                // Jika audio belum pernah dianalisis, siapkan penganalisisnya.
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    source = audioContext.createMediaElementSource(audioPlayer);
+                    source.connect(analyser);
+                    analyser.connect(audioContext.destination);
+                    analyser.fftSize = 256;
+                    const bufferLength = analyser.frequencyBinCount;
+                    dataArray = new Uint8Array(bufferLength);
+                }
+                // Putar atau jeda musik
+                audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
+            });
+
+            // Fungsi untuk menggambar visualisasi detak jantung
+            function drawWaveform() {
+                if (!analyser) return;
+                analyser.getByteTimeDomainData(dataArray);
+                waveformCtx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+                waveformCtx.lineWidth = 2;
+                waveformCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                waveformCtx.beginPath();
+                const sliceWidth = waveformCanvas.width * 1.0 / dataArray.length;
+                let x = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * waveformCanvas.height / 2;
+                    if (i === 0) { waveformCtx.moveTo(x, y); } else { waveformCtx.lineTo(x, y); }
+                    x += sliceWidth;
+                }
+                waveformCtx.lineTo(waveformCanvas.width, waveformCanvas.height / 2);
+                waveformCtx.stroke();
+            }
+
+            // Fungsi untuk menggambar animasi partikel
+            function animateParticles() {
+                particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+                // Menggerakkan partikel cahaya
+                particles.forEach(p => {
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < 0 || p.x > particleCanvas.width) p.vx *= -1;
+                    if (p.y < 0 || p.y > particleCanvas.height) p.vy *= -1;
+                    particleCtx.beginPath();
+                    particleCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    particleCtx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
+                    particleCtx.fill();
+                });
+                // Memunculkan partikel hati saat musik diputar
+                if (!audioPlayer.paused && Math.random() < 0.1) {
+                    loveParticles.push({ x: Math.random() * particleCanvas.width, y: particleCanvas.height + 20, size: Math.random() * 15 + 5, speedY: Math.random() * 1 + 0.5, opacity: 1 });
+                }
+                // Menggerakkan partikel hati ke atas
+                loveParticles.forEach((p, index) => {
+                    p.y -= p.speedY; p.opacity -= 0.01;
+                    if (p.opacity <= 0) { loveParticles.splice(index, 1); } else {
+                        particleCtx.globalAlpha = p.opacity;
+                        particleCtx.font = `${p.size}px Arial`;
+                        particleCtx.fillStyle = 'rgba(236, 72, 153, 0.8)';
+                        particleCtx.fillText('❤️', p.x, p.y);
+                        particleCtx.globalAlpha = 1;
+                    }
+                });
+            }
+
+            // Loop animasi utama yang berjalan terus menerus
+            function animate() {
+                requestAnimationFrame(animate);
+                drawWaveform();
+                animateParticles();
+            }
+            animate();
+        }
+        // --- AKHIR PENJELASAN JAVASCRIPT #2 ---
+        
+        // --- Pemutar Musik (Halaman Galeri) ---
+        const galleryAudio = document.getElementById('gallery-audio');
+        const galleryMusicBtn = document.getElementById('gallery-music-button');
+        const galleryMusicText = document.getElementById('gallery-music-text');
+        const galleryMusicIcon = galleryMusicBtn.querySelector('.material-icons');
+
+        galleryMusicBtn.addEventListener('click', () => {
+            if (galleryAudio.paused) {
+                galleryAudio.play();
+            } else {
+                galleryAudio.pause();
+            }
+        });
+        galleryAudio.addEventListener('play', () => {
+            galleryMusicText.textContent = 'Jeda Lagu';
+            galleryMusicIcon.textContent = 'pause';
+        });
+        galleryAudio.addEventListener('pause', () => {
+            galleryMusicText.textContent = 'Mainkan Lagu Kita';
+            galleryMusicIcon.textContent = 'play_arrow';
+        });
+
+          
+
+        // --- Pemutar VN Surat ---
+        const letterAudio = document.getElementById('letter-audio');
+        const letterAudioBtn = document.getElementById('letter-audio-button');
+        if(letterAudioBtn) {
+            letterAudioBtn.addEventListener('click', () => { letterAudio.paused ? letterAudio.play() : letterAudio.pause(); });
+            letterAudio.addEventListener('play', () => { letterAudioBtn.classList.add('scale-110', 'bg-pink-200'); });
+            letterAudio.addEventListener('pause', () => { letterAudioBtn.classList.remove('scale-110', 'bg-pink-200'); });
+            letterAudio.addEventListener('ended', () => { letterAudioBtn.classList.remove('scale-110', 'bg-pink-200'); });
+        }
+        // --- Animasi Surat ---
+        function startLetterAnimation() {
+            const petalContainer = document.getElementById('petal-container');
+            if(!petalContainer) return;
+            petalContainer.innerHTML = '';
+            for (let i = 0; i < 15; i++) {
+                const petal = document.createElement('div');
+                petal.innerHTML = '🌸';
+                petal.className = 'petal';
+                petal.style.left = `${Math.random() * 100}vw`;
+                petal.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                petal.style.animationDelay = `${Math.random() * 5}s`;
+                petalContainer.appendChild(petal);
+            }
+            const lines = document.querySelectorAll('.letter-text-line');
+            lines.forEach(line => line.classList.remove('visible'));
+            let delay = 500;
+            lines.forEach(line => {
+                setTimeout(() => { line.classList.add('visible'); }, delay);
+                delay += 1200;
+            });
+        }
+
+        // --- Menu Dropdown ---
+        const menuButton = document.getElementById('menu-button');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        menuButton.addEventListener('click', (e) => { e.stopPropagation(); dropdownMenu.classList.toggle('hidden'); });
+        window.addEventListener('click', () => { if (!dropdownMenu.classList.contains('hidden')) dropdownMenu.classList.add('hidden'); });
+
+        
+        // --- Halaman Awal ---
+        showPage('main-page');
+    </script>
+</body>
+</html>
+```</immersive>
